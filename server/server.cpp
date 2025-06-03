@@ -5,6 +5,8 @@
 #define SERVER_PORT 9000
 #define BUFSIZE 512
 
+// 서버에서 클라이언트의 요청을 받아서 처리하는 함수
+// recv 로 받은 데이터를 ServerManager#handleCommand로 넘김
 void *handle_client(void *arg) {
     SOCKET client_sock = (SOCKET)(long long)arg;
     int retval;
@@ -66,7 +68,10 @@ int main() {
         err_quit("listen");
     }
 
+    // ------ 여기까지 소켓 생성 및 바인딩, 리스닝 ------
+
     while (true) {
+        // 클라이언트의 요청을 받아서 통신 연결 (accept)
         struct sockaddr_in clientaddr;
         socklen_t addrlen = sizeof(clientaddr);
         SOCKET client_sock = accept(listen_sock, (struct sockaddr *)&clientaddr, &addrlen);

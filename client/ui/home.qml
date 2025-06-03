@@ -53,6 +53,7 @@ Window {
                 }
             }
 
+            // 게임 대기열 진입을 위한 버튼
             Button {
                 id: quickGameBtn
                 text: qsTr("Quick Game")
@@ -79,6 +80,7 @@ Window {
         }
     }
 
+    // 게임 UI를 띄우기 위한 세팅
     Loader {
         id: gameLoader
         anchors.fill: parent
@@ -100,6 +102,8 @@ Window {
                 matchPopup.open()
             }
 
+            // 서버에서 게임 시작 응답 시 홈 화면 UI를 안 보이게 만들고
+            // 게임 화면 UI를 보이게 만듦
             if (message.trim() === "GAME_START") {
                 homeContent.visible = false
                 gameLoader.active = true

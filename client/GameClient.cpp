@@ -5,7 +5,8 @@
 #include <QObject>
 #include <QString>
 
-void* GameClient::receiveMsg(void* arg) {
+    // 서버로부터 데이터 수신받으면 emit client->messageReceived를 통해 UI에 알림
+    void* GameClient::receiveMsg(void* arg) {
         GameClient* client = static_cast<GameClient*>(arg);
         char buffer[1024];
     
@@ -28,6 +29,7 @@ GameClient::~GameClient() {
         disconnect();
     }
 
+    // 소켓 함수를 통해 서버와 연결을 시도하는 함수
     bool GameClient::connectToServer(const char* ip, int port) {
         clientSocket = socket(AF_INET, SOCK_STREAM, 0);
         if (clientSocket == -1) return false;

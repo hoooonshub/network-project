@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 
+// 게임 매칭 대기열 진입 시 뜨는 팝업 창 UI
 Popup {
     id: gameQueuePopup
     width: parent ? parent.width * 0.4 : 320
@@ -58,8 +59,8 @@ Popup {
             }
 
             onClicked: {
-                // 서버로 큐 취소 메시지 전송 (예: "CANCEL_QUEUE")
-                console.log("매칭 취소 버튼 클릭 – 서버에 CANCEL_QUEUE 전송")
+                // 서버로 큐 취소 메시지 전송 ("QUEUE_OUT")
+                console.log("매칭 취소 버튼 클릭 – 서버에 QUEUE_OUT 전송")
                 gameClient.sendMsg("QUEUE_OUT")
             }
         }

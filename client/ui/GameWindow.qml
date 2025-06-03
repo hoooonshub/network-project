@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 
+// 원카드 게임 UI
 Page {
     id: gameRoot
     width: 800
@@ -12,9 +13,9 @@ Page {
 
     }
 
-    property var handCards: []
-    property int myIndex: -1
-    property int player0Count: 7
+    property var handCards: []  // 본인 손에 있는 카드들
+    property int myIndex: -1    // 서버로부터 받을 나의 인덱스 (화면 상의 나의 위치를 결정)
+    property int player0Count: 7 // 초기 7장 카드 개수로 세팅
     property int player1Count: 7
     property int player2Count: 7
     property int player3Count: 7
@@ -27,6 +28,7 @@ Page {
 
     property string gameResult: ""
 
+    // 카드를 제출하면 그 카드를 제거한 핸드를 만들기 위한 함수
     function removeCardFromHand(card) {
         var idx = handCards.indexOf(card);
         if (idx !== -1) {
@@ -36,6 +38,7 @@ Page {
         }
     }
 
+    // 카드를 제출하면 남은 카드의 개수를 업데이트하기 위한 함수
     function updateDiscardCount(index) {
         if (index === player0Area.playerIndex) {
             player0Count -= 1;
@@ -48,8 +51,8 @@ Page {
         }
     }
 
+    // 카드를 드로우하면 남은 카드의 개수를 증가하는 업데이트를 위한 함수
     function updateDrawCount(index) {
-        console.log("팡션 들어옴" + index);
         if (index === -1) { // 시작 시 초기 세팅
             return;
         }
@@ -69,13 +72,12 @@ Page {
     // 플레이어 0 영역 - 좌측 하단
     Column {
         id: player0Area
-        property int playerIndex: 0
+        property int playerIndex: 0       
         anchors.bottom: parent.bottom
         anchors.left: parent.left
-        anchors.margins: 10                        // 모서리에서 약간 띄움 (여백 10px)
-        spacing: 5                                 // 세로 간격 (카드 배열과 프로필 사이 간격)
+        anchors.margins: 10                        
+        spacing: 5                                 
 
-        // 본인 카드들 (앞면 이미지 표시) - 가로 배열
         Grid {
             id: player0CardRow
             columns: 10
@@ -89,11 +91,11 @@ Page {
                 model: handCards                   // 본인 손패 카드 리스트 (문자열 배열)
 
                 delegate: Item {
-                    width: cardWidth; height: cardHeight   // 카드 아이템 크기 설정
+                    width: cardWidth; height: cardHeight   
                     visible: myIndex === player0Area.playerIndex
                     enabled: currentTurnIndex === player0Area.playerIndex
                     
-                    y: index >= 10 ? cardHeight - 10 : 0
+                    y: index >= 10 ? cardHeight - 10 : 0       // 핸드 카드 11개부터는 2행으로 배치
                     Image {
                         anchors.fill: parent
                         source: "assets/" + modelData + ".png"   // 예: "assets/H3.png"
@@ -102,7 +104,7 @@ Page {
                     
                     MouseArea {
                         anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor      // 마우스 커서를 손가락 모양으로
+                        cursorShape: Qt.PointingHandCursor      
                         onClicked: {
                             // 서버로 "PLAY [카드코드]" 메시지 전송 (예: "PLAY H3")
                             gameClient.sendMsg("PLAY " + modelData)
@@ -111,17 +113,15 @@ Page {
                 }
             }
 
-            // "상대라면" 카드 뒷면 
+            // "상대"라면 카드 뒷면 
             Image {
-                
                 width: cardWidth; height: cardHeight
                 source: cardBackImage
                 fillMode: Image.PreserveAspectFit
                 visible: myIndex !== player0Area.playerIndex
             }
-            // 몇 개 남았는지
+            // "상대"라면 몇 개 남았는지
             Text {
-                
                 text: player0Count + " Left"
                 color: "white"
                 font.pixelSize: 17
@@ -131,11 +131,11 @@ Page {
             }
         }
 
-        // 플레이어 0 프로필 및 턴 상태 표시 (프로필 이미지 + "MYTURN"/"WAITING")
+        // 플레이어 0 프로필 및 턴 상태 표시 (프로필 + "MYTURN"/"WAITING")
         Row {
             id: player0InfoRow
             spacing: 5
-            // 플레이어 프로필 이미지 (여기서는 임시로 회색 사각형 사용)
+            // 플레이어 프로필
             Rectangle {
                 id: player0Profile
                 width: 50; height: 50
@@ -143,7 +143,7 @@ Page {
 
                 Text {
                     anchors.centerIn: parent
-                    text: player0Area.playerIndex === myIndex ? "ME" : "OPP"
+                    text: player0Area.playerIndex === myIndex ? "ME" : "OPP" // 본인과 상대방 위치 구분을 위한 마커
                 }
             }
             // 턴 상태 텍스트: 본인 차례이면 "MYTURN", 아니면 "WAITING"
@@ -156,6 +156,7 @@ Page {
         }
     }
 
+    // [플레이어 0의 컴포넌트와 동일; 위치만 변경]
     // 플레이어 1 영역 - 화면 우하단
     Column {
         id: player1Area
@@ -165,7 +166,7 @@ Page {
         anchors.margins: 10
         spacing: 5
 
-        // 플레이어 1 카드들 (뒷면 이미지 표시) - 가로 배열
+        // 플레이어 1의 카드
         Grid {
             id: player1CardRow
             spacing: 5
@@ -179,7 +180,7 @@ Page {
                 model: handCards                   // 본인 손패 카드 리스트 (문자열 배열)
 
                 delegate: Item {
-                    width: cardWidth; height: cardHeight   // 카드 아이템 크기 설정
+                    width: cardWidth; height: cardHeight   
                     visible: myIndex === player1Area.playerIndex
                     enabled: currentTurnIndex === player1Area.playerIndex
                     
@@ -192,7 +193,7 @@ Page {
                     
                     MouseArea {
                         anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor      // 마우스 커서를 손가락 모양으로
+                        cursorShape: Qt.PointingHandCursor      
                         onClicked: {
                             // 서버로 "PLAY [카드코드]" 메시지 전송 (예: "PLAY H3")
                             gameClient.sendMsg("PLAY " + modelData)
@@ -246,6 +247,7 @@ Page {
         }
     }
 
+    // [플레이어 0의 컴포넌트와 동일; 위치만 변경]
     // 플레이어 2 영역 - 화면 우상단
     Column {
         id: player2Area
@@ -277,7 +279,7 @@ Page {
                 }
             }
         }
-        // 플레이어 2 카드들 (뒷면 이미지) - 가로 배열
+        
         Grid {
             id: player2CardsRow
             anchors.right: parent.right               // 우측 정렬
@@ -289,10 +291,10 @@ Page {
             // "본인"이라면 자신의 손패 카드
             Repeater {
                 id: player2Repeater
-                model: handCards                   // 본인 손패 카드 리스트 (문자열 배열)
+                model: handCards                   
 
                 delegate: Item {
-                    width: cardWidth; height: cardHeight   // 카드 아이템 크기 설정
+                    width: cardWidth; height: cardHeight   
                     visible: myIndex === player2Area.playerIndex
                     enabled: currentTurnIndex === player2Area.playerIndex
                     
@@ -305,7 +307,7 @@ Page {
                     
                     MouseArea {
                         anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor      // 마우스 커서를 손가락 모양으로
+                        cursorShape: Qt.PointingHandCursor      
                         onClicked: {
                             // 서버로 "PLAY [카드코드]" 메시지 전송 (예: "PLAY H3")
                             gameClient.sendMsg("PLAY " + modelData)
@@ -335,6 +337,7 @@ Page {
         }
     }
 
+    // [플레이어 0의 컴포넌트와 동일; 위치만 변경]
     // 플레이어 3 영역 - 화면 좌상단
     Column {
         id: player3Area
@@ -367,7 +370,8 @@ Page {
                 verticalAlignment: Text.AlignVCenter
             }
         }
-        // 플레이어 3 카드들 (뒷면 이미지)
+
+        // 플레이어 3 카드들
         Grid {
             id: player3CardsRow
             spacing: 5
@@ -381,7 +385,7 @@ Page {
                 model: handCards                   // 본인 손패 카드 리스트 (문자열 배열)
                 
                 delegate: Item {
-                    width: cardWidth; height: cardHeight   // 카드 아이템 크기 설정
+                    width: cardWidth; height: cardHeight   
                     visible: myIndex === player3Area.playerIndex
                     enabled: currentTurnIndex === player3Area.playerIndex
                     
@@ -394,7 +398,7 @@ Page {
                     
                     MouseArea {
                         anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor      // 마우스 커서를 손가락 모양으로
+                        cursorShape: Qt.PointingHandCursor      
                         onClicked: {
                             // 서버로 "PLAY [카드코드]" 메시지 전송 (예: "PLAY H3")
                             gameClient.sendMsg("PLAY " + modelData)
@@ -441,16 +445,17 @@ Page {
         width: cardWidth; height: cardHeight
         anchors.verticalCenter: topCardImageId.verticalCenter
         anchors.right: topCardImageId.left
-        anchors.rightMargin: 40                     // 가운데 카드와 약간 간격 띄움
+        anchors.rightMargin: 40                    
         cursorShape: Qt.PointingHandCursor
 
-        enabled: currentTurnIndex === myIndex
+        enabled: currentTurnIndex === myIndex   // 본인 차례일 때만 클릭 활성화
 
         // 사용자 클릭 시 "DRAW" 명령을 서버로 전송
         onClicked: {
             gameClient.sendMsg("DRAW")
         }
-        // 더미 덱 이미지 (뒷면 카드 한 장 표시)
+
+        // 더미 덱 이미지 
         Image {
             anchors.fill: parent
             source: drawDeckImage
@@ -489,6 +494,7 @@ Page {
                 
             }
 
+            // 확인 클릭 시 다시 홈 화면으로 이동
             Button {
                 text: "확인"
                 width: parent.width * 0.5
@@ -513,40 +519,46 @@ Page {
             var command = parts[0];
 
             switch (command) {
+                // 'INDEX 1' 과 같은 형태로 파싱
+                // 게임 초기 세팅 시 본인의 위치 파악 용 인덱스 정보 
                 case "INDEX":
                     myIndex = parts[1];
                     break;
 
+                // 'HAND H9,SK,CA,HT' 와 같은 형태로 파싱
+                // 카드를 드로우할 때 본인 핸드를 계속 업데이트하기 위한 command
                 case "HAND":
-                    console.log("HAND 들어옴");
                     updateDrawCount(currentTurnIndex);
 
                     if (currentTurnIndex !== -1 && currentTurnIndex !== myIndex) { // 드로우한 본인만 업데이트하기 위해 본인 아니면 break;
                         break;
                     }
 
-                    var cardsList = parts[1].trim().split(",")    // 콤마로 구분된 카드코드 배열
+                    var cardsList = parts[1].trim().split(",")    // 콤마로 구분된 카드코드 토큰이 담긴 배열
                     handCards = cardsList.filter(function(item) {
                         return item.length > 0;
                     });
                     break;
 
+                // 'DISCARD H2' 와 같은 형태로 파싱
+                // 카드를 냈을 때 더미 상단 카드와 플레이어에게 남은 카드, 손에 있는 카드를 업데이트하기 위한 command
                 case "DISCARD":
                     topCardImage = "assets/" + parts[1] + ".png"
                     removeCardFromHand(parts[1])
                     updateDiscardCount(currentTurnIndex);
                     break;
 
-                case "YOUR_TURN":
+                // 'TURN 2' 와 같은 형태로 파싱
+                // 턴이 넘어갈 때 누구의 턴인지 알기 위해 인덱스 번호와 함께 정보를 수신
+                // 
+                case "TURN":
+                    console.log("TURN " + parts[1])
                     var turn = parts[1];
                     currentTurnIndex = turn;
                     break;
 
-                case "NOT_YOUR_TURN":
-                    var turn = parts[1];
-                    currentTurnIndex = turn;
-                    break;
-
+                // 'GAME_OVER' 로 수신
+                // 게임 종료를 알리기 위한 문자열 값
                 case "GAME_OVER":
                     gameResult = parts[1];
                     gameOverPopup.open();
