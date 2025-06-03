@@ -41,6 +41,7 @@ public:
 
     void removePlayer(Player* player) {
         pthread_mutex_lock(&serverMutex);
+        printf("remove Player\n");
         if (player->isInQueue()) {
             auto it = std::find(gameMatchingQueue.begin(), gameMatchingQueue.end(), player);
             if (it != gameMatchingQueue.end()) {
@@ -53,11 +54,7 @@ public:
             int sessionId = player->getSessionId();
             auto it = activeSessions.find(sessionId);
             if (it != activeSessions.end()) {
-                it->second->removePlayer(player);
-                if (it->second->isEmpty()) {
-                    delete it->second;
-                    activeSessions.erase(it);
-                }
+                it->second->pushCommand(player, "DISCONNECT", true);
             }
             player->goInLobby();
             player->setSessionId(-1);

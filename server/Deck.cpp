@@ -52,6 +52,8 @@ public:
         return cards.empty();
     }
 
+    // 드로우 덱 다 쓰면 호출되는 함수
+    // 버려진 카드 더미를 섞어서 다시 드로우 덱으로 만듦 -> 셔플 후 사용
     void reshuffle(Deck& discardedDeck) {
         cards.insert(cards.end(), discardedDeck.cards.begin(), discardedDeck.cards.end());
         discardedDeck.cards.clear();

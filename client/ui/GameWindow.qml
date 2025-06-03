@@ -13,6 +13,7 @@ Page {
 
     }
 
+    property var disconnectedPlayers: []
     property var handCards: []  // 본인 손에 있는 카드들
     property int myIndex: -1    // 서버로부터 받을 나의 인덱스 (화면 상의 나의 위치를 결정)
     property int player0Count: 7 // 초기 7장 카드 개수로 세팅
@@ -67,6 +68,11 @@ Page {
         } else if (index === player3Area.playerIndex) {
             player3Count += 1;
         }
+    }
+
+    function handleDisconnect(index) {
+        disconnectedPlayers.push(parseInt(index))
+        disconnectedPlayers = [...disconnectedPlayers]
     }
 
     // 플레이어 0 영역 - 좌측 하단
@@ -141,15 +147,25 @@ Page {
                 width: 50; height: 50
                 color: "#cccccc"                          // 연한 회색으로 표시 (프로필 이미지 자리)
 
+                Image {
+                    anchors.fill: parent
+                    source: disconnectedPlayers.includes(player0Area.playerIndex) ? 
+                       "assets/disc.png" : ""  // 연결 종료된 경우 disc.png 표시
+                    visible: disconnectedPlayers.includes(player0Area.playerIndex)
+                }
+
                 Text {
                     anchors.centerIn: parent
                     text: player0Area.playerIndex === myIndex ? "ME" : "OPP" // 본인과 상대방 위치 구분을 위한 마커
+                    visible: !disconnectedPlayers.includes(player0Area.playerIndex)
                 }
             }
             // 턴 상태 텍스트: 본인 차례이면 "MYTURN", 아니면 "WAITING"
             Text {
-                text: player0Area.playerIndex === currentTurnIndex ? "MYTURN" : "WAITING"
-                color: player0Area.playerIndex === currentTurnIndex ? "#2d22c9" : "white"
+                text: disconnectedPlayers.includes(player0Area.playerIndex) ? 
+                        "DISCONNECT" : (player0Area.playerIndex === currentTurnIndex ? "MYTURN" : "WAITING")
+                color: disconnectedPlayers.includes(player0Area.playerIndex) ? 
+                        "red" : (player0Area.playerIndex === currentTurnIndex ? "#2d22c9" : "white")
                 font.pixelSize: player0Area.playerIndex == currentTurnIndex ? 20 : 16
                 verticalAlignment: Text.AlignVCenter
             }
@@ -229,15 +245,25 @@ Page {
             spacing: 5
             // 프로필 턴 상태 텍스트를 먼저 배치하여 프로필이 오른쪽에 오도록 설정
             Text {
-                text: player1Area.playerIndex === currentTurnIndex ? "MYTURN" : "WAITING"
-                color: player1Area.playerIndex === currentTurnIndex ? "#2d22c9" : "white"
+                text: disconnectedPlayers.includes(player1Area.playerIndex) ? 
+                        "DISCONNECT" : (player1Area.playerIndex === currentTurnIndex ? "MYTURN" : "WAITING")
+                color: disconnectedPlayers.includes(player1Area.playerIndex) ? 
+                        "red" : (player1Area.playerIndex === currentTurnIndex ? "#2d22c9" : "white")
                 font.pixelSize: player1Area.playerIndex == currentTurnIndex ? 20 : 16
                 verticalAlignment: Text.AlignVCenter
             }
+
             Rectangle {
                 id: player1Profile
                 width: 50; height: 50
                 color: "#cccccc"
+
+                Image {
+                    anchors.fill: parent
+                    source: disconnectedPlayers.includes(player1Area.playerIndex) ? 
+                       "assets/disc.png" : ""  // 연결 종료된 경우 disc.png 표시
+                    visible: disconnectedPlayers.includes(player1Area.playerIndex)
+                }
 
                 Text {
                     anchors.centerIn: parent
@@ -262,16 +288,27 @@ Page {
             id: player2InfoRow
             anchors.right: parent.right               // 우측 정렬
             spacing: 5
+
             Text {
-                text: player2Area.playerIndex === currentTurnIndex ? "MYTURN" : "WAITING"
-                color: player2Area.playerIndex === currentTurnIndex ? "#2d22c9" : "white"
+                text: disconnectedPlayers.includes(player2Area.playerIndex) ? 
+                        "DISCONNECT" : (player2Area.playerIndex === currentTurnIndex ? "MYTURN" : "WAITING")
+                color: disconnectedPlayers.includes(player2Area.playerIndex) ? 
+                        "red" : (player2Area.playerIndex === currentTurnIndex ? "#2d22c9" : "white")
                 font.pixelSize: player2Area.playerIndex == currentTurnIndex ? 20 : 16
                 verticalAlignment: Text.AlignVCenter
             }
+
             Rectangle {
                 id: player2Profile
                 width: 50; height: 50
                 color: "#cccccc"
+
+                Image {
+                    anchors.fill: parent
+                    source: disconnectedPlayers.includes(player2Area.playerIndex) ? 
+                       "assets/disc.png" : ""  // 연결 종료된 경우 disc.png 표시
+                    visible: disconnectedPlayers.includes(player2Area.playerIndex)
+                }
 
                 Text {
                     anchors.centerIn: parent
@@ -357,6 +394,13 @@ Page {
                 width: 50; height: 50
                 color: "#cccccc"
 
+                Image {
+                    anchors.fill: parent
+                    source: disconnectedPlayers.includes(player3Area.playerIndex) ? 
+                       "assets/disc.png" : ""  // 연결 종료된 경우 disc.png 표시
+                    visible: disconnectedPlayers.includes(player3Area.playerIndex)
+                }
+
                 Text {
                     anchors.centerIn: parent
                     text: player3Area.playerIndex === myIndex ? "ME" : "OPP"
@@ -364,8 +408,10 @@ Page {
             }
 
             Text {
-                text: player3Area.playerIndex === currentTurnIndex ? "MYTURN" : "WAITING"
-                color: player3Area.playerIndex === currentTurnIndex ? "#2d22c9" : "white"
+                text: disconnectedPlayers.includes(player3Area.playerIndex) ? 
+                        "DISCONNECT" : (player3Area.playerIndex === currentTurnIndex ? "MYTURN" : "WAITING")
+                color: disconnectedPlayers.includes(player3Area.playerIndex) ? 
+                        "red" : (player3Area.playerIndex === currentTurnIndex ? "#2d22c9" : "white")
                 font.pixelSize: player3Area.playerIndex == currentTurnIndex ? 20 : 16
                 verticalAlignment: Text.AlignVCenter
             }
@@ -557,10 +603,16 @@ Page {
                     currentTurnIndex = turn;
                     break;
 
+                case "DISCONNECT":
+                    console.log("DISCONNECT " + parts[1])
+                    handleDisconnect(parts[1])
+                    break;
+
                 // 'GAME_OVER' 로 수신
                 // 게임 종료를 알리기 위한 문자열 값
                 case "GAME_OVER":
                     gameResult = parts[1];
+                    console.log("log log" + parts[1]);
                     gameOverPopup.open();
                     break;
 

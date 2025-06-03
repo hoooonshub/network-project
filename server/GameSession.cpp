@@ -8,8 +8,9 @@
 struct Command {
     Player* player;
     std::string playing;
+    bool isDisconnect;
 
-    Command(Player* p, const std::string& cmd) : player(p), playing(cmd) {}
+    Command(Player* p, const std::string& cmd, bool dis = false) : player(p), playing(cmd), isDisconnect(dis) {}
 };
 
 class GameSession {
@@ -36,7 +37,9 @@ private:
     }
 
     void passturn() {
-        currentPlayerIndex = (currentPlayerIndex + 1) % gamePlayers.size();
+        do {
+            currentPlayerIndex = (currentPlayerIndex + 1) % gamePlayers.size();
+        } while (gamePlayers[currentPlayerIndex] == nullptr);
 
         sendToAll("TURN " + std::to_string(currentPlayerIndex), 6, 0);
     }
@@ -101,6 +104,60 @@ private:
         return false;
     }
 
+    void handleDisconnect(Player* player) {
+        pthread_mutex_lock(&sessionMutex);
+        printf("disconnect handling\n");
+
+        // 플레이어 인덱스 찾기
+        auto it = std::find(gamePlayers.begin(), gamePlayers.end(), player);
+        if (it == gamePlayers.end()) {
+            pthread_mutex_unlock(&sessionMutex);
+            return;
+        }
+        int disconnectedIndex = std::distance(gamePlayers.begin(), it);
+
+        // 플레이어 카드 -> dummyDeck에 추가
+        auto handIt = playerHands.find(player);
+        if (handIt != playerHands.end()) {
+            for (const Card& card : handIt->second) {
+                dummyDeck.add(card);
+            }
+            playerHands.erase(handIt);
+        }
+
+        // 플레이어 게임에서 제거
+        gamePlayers[disconnectedIndex] = nullptr;
+
+        // 클라이언트에 DISCONNECT 메시지 전송
+        std::string disconnectMsg = "DISCONNECT " + std::to_string(disconnectedIndex) + "\n";
+        sendToAll(disconnectMsg.c_str(), disconnectMsg.length(), 0);
+       
+        int activePlayers = std::count_if(gamePlayers.begin(), gamePlayers.end(), 
+        [](Player* p) { return p != nullptr; });
+
+        // 한 명 남으면 게임 종료 처리
+        // 현재 턴이 나간 플레이어라면 다음 플레이어로 턴 넘기기
+        if (activePlayers == 1) {
+            isGameOver = true;
+            for (size_t i = 0; i < gamePlayers.size(); i++) {
+                if (gamePlayers[i] != nullptr) {
+                    std::string winMsg = "GAME_OVER WIN";
+                    send(gamePlayers[i]->getSocket(), winMsg.c_str(), winMsg.length(), 0);
+                    sleep(1);
+                    break;
+                }
+            }
+            printf("Game--over\n");
+        } else if (activePlayers >= 2) {
+            if (gamePlayers[currentPlayerIndex] == nullptr) {
+                sleep(1);
+                passturn();
+            }
+        }
+        
+        pthread_mutex_unlock(&sessionMutex);
+    }
+
 public:
     GameSession(std::vector<Player*> players) : sessionId(nextSessionId++), gamePlayers(players), currentPlayerIndex(-1),
             drawDeck(Deck::newOne()), dummyDeck(Deck::dummy()), topCard(drawDeck.draw()) {
@@ -119,18 +176,18 @@ public:
     // 게임 중인 플레이어의 요청을 ServerManager에서 넘겨받아 처리
     // 뮤텍스 & 조건 변수를 이용하여 플레이 명령어 큐에 넣고 조건 변수 시그널 알림
     // run 함수의 대기 중이던 pthread_cond_wait가 깨어 명령어를 처리하도록 함
-    void pushCommand(Player* player, const std::string command) {
+    void pushCommand(Player* player, const std::string command, bool isDisconnect = false) {
         pthread_mutex_lock(&sessionMutex);
 
-        playingCommands.push(Command(player, command));
+        playingCommands.push(Command(player, command, isDisconnect));
         pthread_cond_signal(&playingCond);
 
         pthread_mutex_unlock(&sessionMutex);
     }
 
     void sendToAll(const std::string& message, size_t length, int flags) {
-
         for (Player* player : gamePlayers) {
+            if (player == nullptr) continue;
             send(player->getSocket(), message.c_str(), length, flags);
         }
         printf("Send : %s [to ALL]\n", message.c_str());
@@ -175,13 +232,12 @@ public:
         printf("Initial hands\n");
         sleep(1);
 
+        passturn(); 
+
         // 각 턴의 플레이어에게 데이터를 받아 게임을 진행하는 메인 로직
         while (!isGameOver) {
             pthread_mutex_lock(&sessionMutex);
             printf("Game In Progress\n");
-
-            passturn(); // 다음 플레이어로 턴을 넘기는 함수
-            sleep(1);
 
             // 뮤텍스 & 조건 변수를 이용한 스레드 간 데이터 처리 부분
             // 큐에 데이터가 들어올 때 signal을 보내고, 대기 중인 스레드가 깨어나서 명령어를 처리함
@@ -192,6 +248,12 @@ public:
             Command command = playingCommands.front();
             playingCommands.pop();
             pthread_mutex_unlock(&sessionMutex);
+
+            if (command.isDisconnect) {
+                printf("before handle\n");
+                handleDisconnect(command.player);
+                continue;
+            }
 
             // 자기 턴이 아닐 때 데이터가 오면 잘못된 데이터이므로 에러 처리,
             if (command.player != gamePlayers[currentPlayerIndex]) {
@@ -220,10 +282,13 @@ public:
             if (drawDeck.isExhausted()) {
                 drawDeck.reshuffle(dummyDeck);
             }
+
+            passturn(); // 다음 플레이어로 턴을 넘기는 함수
         }
 
         // 게임 종료 로직
         for (Player* player : gamePlayers) {
+            if (player == nullptr) continue;
             player->goInLobby();
             player->setSessionId(-1);
         }
