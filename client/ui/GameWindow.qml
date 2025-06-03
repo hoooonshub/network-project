@@ -519,6 +519,7 @@ Page {
         modal: true
         focus: true
         visible: showGameOverPopup
+        closePolicy: Popup.NoAutoClose
 
         background: Rectangle {
             color: "#ffffff"

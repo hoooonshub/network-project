@@ -131,6 +131,7 @@ private:
         // 클라이언트에 DISCONNECT 메시지 전송
         std::string disconnectMsg = "DISCONNECT " + std::to_string(disconnectedIndex) + "\n";
         sendToAll(disconnectMsg.c_str(), disconnectMsg.length(), 0);
+        sleep(1);
        
         int activePlayers = std::count_if(gamePlayers.begin(), gamePlayers.end(), 
         [](Player* p) { return p != nullptr; });
