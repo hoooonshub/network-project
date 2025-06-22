@@ -14,3 +14,6 @@
   5.1 client 실행 ./one-card.app/Contents/MacOS/one-card
 6. cd server로 server 파일 이동 -> make로 실행 파일 생성
   6.1 server 실행 ./one-card-server
+
+
+> sys/socket 를 사용한 코드이다보니 윈도우 OS에서는 컴파일이 되지 않음(윈속을 사용한 코드 없음)
